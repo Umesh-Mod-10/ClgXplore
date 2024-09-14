@@ -1,25 +1,25 @@
-
-import os                                                   # for using env variables
+import os  # for using env variables
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 kit_dir = os.path.abspath(os.path.join(current_dir, ".."))
 repo_dir = os.path.abspath(os.path.join(kit_dir, ".."))
 
-import yaml                                                 # for loading prompt example config file
+import yaml  # for loading prompt example config file
 from dataclasses import dataclass
-from typing import Tuple                                    # for type hint
+from typing import Tuple  # for type hint
 from langchain_core.language_models.llms import LLM
-from langchain.prompts import PromptTemplate, load_prompt   # for creating and loading prompting yaml files
+from langchain.prompts import PromptTemplate, load_prompt  # for creating and loading prompting yaml files
 
 from utils.model_wrappers.api_gateway import APIGateway
 
 # define config path
-CONFIG_PATH = os.path.join(kit_dir,'config.yaml')
+CONFIG_PATH = os.path.join(kit_dir, 'config.yaml')
+
 
 @dataclass(init=False)
 class LLMManager:
     """A class to manage the configuration, setup, and interaction with various LLMs."""
-    
+
     def __init__(self):
         """Gets model information and prompt use cases from config file"""
         llm_info, model_info, prompt_use_cases = self._get_config_info()
@@ -31,15 +31,15 @@ class LLMManager:
     def _get_config_info(self) -> Tuple[str, dict, list]:
         """Loads json config file
         """
-        
+
         # Read config file
         with open(CONFIG_PATH, 'r', encoding='utf-8') as file:
             config = yaml.safe_load(file)
         model_info = config["models"]
         llm_info = config["llm"]
         prompt_use_cases = config["use_cases"]
-        
-        return llm_info, model_info, prompt_use_cases   
+
+        return llm_info, model_info, prompt_use_cases
 
     def set_llm(self, model_expert: str) -> LLM:
         """Sets a langchain embedding model
@@ -60,33 +60,31 @@ class LLMManager:
         )
         return llm
 
-
     def get_prompt_template(self, model: str, prompt_use_case: str) -> str:
         """Reads a prompt template from an specified model and use case
 
         Args:
-            model (str): model name 
+            model (str): model name
             prompt_use_case (str): use case name
 
         Returns:
             str: prompt template associated to the model and use case selected
         """
-        
-        # Load prompt from the corresponding yaml file
-        prompt_file_name = f"{model.lower()}-prompt_engineering-{prompt_use_case.lower().replace(' ','_')}_usecase.yaml"
-        prompt = load_prompt(f'./prompts/{prompt_file_name}')
-        
-        return prompt.template
 
+        # Load prompt from the corresponding yaml file
+        prompt_file_name = f"{model.lower()}-prompt_engineering-{prompt_use_case.lower().replace(' ', '_')}_usecase.yaml"
+        prompt = load_prompt(f'./prompts/{prompt_file_name}')
+
+        return prompt.template
 
     def create_prompt_yamls(self) -> None:
         """Shows a way how prompt yamls can be created. We're going to save our prompts in yaml files.
         """
-        
+
         # Given a set of prompts based on the use case and model used
         prompts_templates = {
             "General Assistant": {
-                "Llama2": "[INST] <<SYS>> You are a helpful, respectful, positive, and honest assistant. Your answers should not include any unsafe, unethical, or illegal content. If you don't understand the question or don't know the answer, please don't share false information. <</SYS>>\n\nHow can I write better prompts for large language models? [/INST]"        
+                "Llama2": "[INST] <<SYS>> You are a helpful, respectful, positive, and honest assistant. Your answers should not include any unsafe, unethical, or illegal content. If you don't understand the question or don't know the answer, please don't share false information. <</SYS>>\n\nHow can I write better prompts for large language models? [/INST]"
             },
             "Document Search": {
                 "Llama2": "[INST] <<SYS>> Use the following pieces of context to answer the question at the end. If the answer is not in context for answering, say that you don't know, don't try to make up an answer or provide an answer not extracted from provided context. <</SYS>>\nContext: Early Account Closure Fee $30 (if account is closed within 6 months of opening) \nReplacement of ATM Card $5 per card \nReplacement Of Lost Passbook $15 per passbook \nQuestion: I lost my ATM card. How much will it cost to replace it? [/INST]"
@@ -107,10 +105,10 @@ class LLMManager:
                 "Llama2": "[INST] <<SYS>> Decompose a complex query into a list of questions that can be addressed individually. Follow these rules: 1. Only use the information given in the query. 2. The output is in JSON format. 3. No explanation or conclusions are necessary. <</SYS>>\n\nQuery example:\n\n'''Compare the prices, security features, engines, and overall user experience of Ford Escape and Toyota Rav4.'''\n\nOutput:\n\n<<<{questions: ['1. What is the price of the Ford Escape and how does it vary across different trim levels?','2. What is the price of the Toyota Rav4 and how does it vary across different trim levels?','3. What are the security features offered in the Ford Escape?','4. What are the security features offered in the Toyota Rav4?','5. What are the engine specifications of the Ford Escape?','6. What are the engine specifications of the Toyota Rav4?','7. What is the overall user experience of the Ford Escape?','8. What is the overall user experience of the Toyota Rav4?']}>>>\n\nNew query:\n\n'''Compare the features, performance, and prices of the iPhone models iPhone 12, iPhone 12 Pro, and iPhone 12 Pro Max, including differences in camera capabilities, display specifications, battery life, and overall user experience.'''\n\nOuput: [/INST]"
             }
         }
-        
+
         # Iterate and save prompts in yaml files
         for usecase_key, usecase_value in prompts_templates.items():
             for model_key, prommpt_template in usecase_value.items():
-                prompt_file_name = f"{model_key.lower().replace(' ','_')}-prompt_engineering-{usecase_key.lower().replace(' ','_')}_usecase"
+                prompt_file_name = f"{model_key.lower().replace(' ', '_')}-prompt_engineering-{usecase_key.lower().replace(' ', '_')}_usecase"
                 prompt = PromptTemplate.from_template(prommpt_template)
                 prompt.save(f"./prompts/{prompt_file_name}.yaml")

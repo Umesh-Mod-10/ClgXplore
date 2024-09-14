@@ -1,6 +1,6 @@
 llm:
   api: "sncloud" #  set either sncloud or sambastudio
-  max_tokens_to_generate: 500
+  max_tokens_to_generate: 1500
   temperature: 0.0
   coe: True
   select_expert: "llama3-405b"
